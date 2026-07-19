@@ -1193,10 +1193,60 @@ const app = {
   deleteSubmission(regId) {
     if (confirm(`Are you sure you want to delete candidate ${regId} from results?`)) {
       state.admin.results = state.admin.results.filter(r => r.regId !== regId);
-      this.saveDatabase();
+      localStorage.setItem('eee_portal_results', JSON.stringify(state.admin.results));
+
+      // Reset record across Render backend, Netlify API & Cloud Blob
+      fetch(`https://eee-club.onrender.com/api/results/${regId}`, { method: 'DELETE' }).catch(e => console.warn(e));
+      fetch(`/api/results/${regId}`, { method: 'DELETE' }).catch(e => console.warn(e));
+      fetch(CLOUD_DB_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state.admin.results)
+      }).catch(e => console.warn(e));
+
       this.renderLeaderboard();
+      this.populateDeptFilter();
       this.updateDashboardMetrics();
     }
+  },
+
+  // Reset event database across all storage layers (organiser only)
+  resetDatabase() {
+    state.admin.results = [];
+    localStorage.setItem('eee_portal_results', JSON.stringify([]));
+
+    // Reset across Render server, Netlify Functions, and Cloud Blob
+    fetch('https://eee-club.onrender.com/api/results/reset', { method: 'POST' }).catch(e => console.warn(e));
+    fetch('/api/results/reset', { method: 'POST' }).catch(e => console.warn(e));
+    fetch(CLOUD_DB_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([])
+    }).catch(e => console.warn(e));
+
+    this.renderLeaderboard();
+    this.populateDeptFilter();
+    this.updateDashboardMetrics();
+  },
+
+  confirmResetDatabase() {
+    const overlay = $('confirm-modal');
+    $('modal-title').innerText = 'Reset Entire Database?';
+    $('modal-body').innerHTML = `
+      <span class="text-danger">WARNING: This will permanently delete ALL candidate records, student grades, and results logs across local and cloud databases.</span><br>
+      This action is irreversible. Make sure you have exported your backups.
+    `;
+    overlay.classList.add('active');
+    
+    $('modal-confirm-btn').onclick = () => {
+      overlay.classList.remove('active');
+      this.resetDatabase();
+      alert("Database has been completely reset to empty.");
+    };
+    
+    $('modal-cancel-btn').onclick = () => {
+      overlay.classList.remove('active');
+    };
   },
   
   // Analytics Renderers
