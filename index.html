@@ -331,6 +331,20 @@
           <!-- Main Admin Content -->
           <div class="admin-content-area">
             
+            <!-- Live Real-Time Banner -->
+            <div class="live-status-bar glass-card">
+              <div class="live-pulse-indicator">
+                <span class="live-dot"></span>
+                <span class="live-text font-outfit">LIVE REAL-TIME MONITORING ACTIVE</span>
+              </div>
+              <div class="live-sub-info text-muted font-outfit">
+                Auto-updating registered candidates, active test writers & final scores live
+              </div>
+              <button class="btn-secondary btn-sm" onclick="app.syncCloudDatabase()" style="font-size:0.8rem; padding:0.4rem 0.85rem;">
+                <span class="material-icons text-cyan" style="font-size:0.9rem;">sync</span> Sync Now
+              </button>
+            </div>
+
             <!-- Summary Metric Cards -->
             <div class="metrics-row">
               <!-- Card 1: Total Registered -->

@@ -125,12 +125,12 @@ const app = {
     this.loadDatabase();
     this.syncCloudDatabase();
 
-    // Auto-sync cloud submissions every 8 seconds when Organiser dashboard is active
+    // Auto-sync cloud submissions every 3 seconds when Organiser dashboard is active
     setInterval(() => {
       if (state.activeView === 'view-admin-dashboard') {
         this.syncCloudDatabase();
       }
-    }, 8000);
+    }, 3000);
 
     // Network reconnection listener: auto-push pending results as soon as internet reconnects
     window.addEventListener('online', () => {

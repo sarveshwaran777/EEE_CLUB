@@ -2193,3 +2193,46 @@ select option:hover, select option:focus, select option:checked {
     transform: scale(1) rotate(0deg);
   }
 }
+
+/* Live Sync Status Bar */
+.live-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  background: rgba(0, 242, 254, 0.04);
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  border-radius: 12px;
+}
+
+.live-pulse-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  background-color: var(--accent-green);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent-green);
+  animation: pulseLiveDot 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseLiveDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.8); }
+}
+
+.live-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent-cyan);
+}
+
+.live-sub-info {
+  font-size: 0.78rem;
+}
