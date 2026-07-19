@@ -166,25 +166,63 @@ const app = {
   saveDatabase() {
     localStorage.setItem('eee_portal_results', JSON.stringify(state.admin.results));
 
-    // Asynchronously push merged candidate records to global cloud DB
-    fetch(CLOUD_DB_URL, { cache: 'no-cache' })
-      .then(res => res.ok ? res.json() : [])
-      .then(remoteData => {
-        const merged = mergeDatabaseRecords(state.admin.results, Array.isArray(remoteData) ? remoteData : []);
-        state.admin.results = merged;
-        localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+    // 1. Try Express backend REST API first
+    fetch('/api/results/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.admin.results)
+    }).then(res => {
+      if (res.ok) return res.json();
+      throw new Error('Local API unavailable');
+    }).then(data => {
+      if (data && Array.isArray(data.data)) {
+        state.admin.results = data.data;
+        localStorage.setItem('eee_portal_results', JSON.stringify(data.data));
+      }
+    }).catch(() => {
+      // 2. Fallback to Cloud Database Endpoint
+      fetch(CLOUD_DB_URL, { cache: 'no-cache' })
+        .then(res => res.ok ? res.json() : [])
+        .then(remoteData => {
+          const merged = mergeDatabaseRecords(state.admin.results, Array.isArray(remoteData) ? remoteData : []);
+          state.admin.results = merged;
+          localStorage.setItem('eee_portal_results', JSON.stringify(merged));
 
-        return fetch(CLOUD_DB_URL, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(merged)
-        });
-      })
-      .catch(err => console.warn("Cloud push warning:", err));
+          return fetch(CLOUD_DB_URL, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(merged)
+          });
+        })
+        .catch(err => console.warn("Cloud push warning:", err));
+    });
   },
 
-  // Fetch live global submissions from central cloud
+  // Fetch live global submissions from backend API or central cloud
   async syncCloudDatabase() {
+    // 1. Try Express Backend API first
+    try {
+      const serverRes = await fetch('/api/results', { cache: 'no-cache' });
+      if (serverRes.ok) {
+        const serverData = await serverRes.json();
+        if (Array.isArray(serverData)) {
+          const merged = mergeDatabaseRecords(state.admin.results, serverData);
+          state.admin.results = merged;
+          localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+
+          if (state.activeView === 'view-admin-dashboard') {
+            this.updateDashboardMetrics();
+            this.populateDeptFilter();
+            this.renderLeaderboard();
+          }
+          return;
+        }
+      }
+    } catch (err) {
+      // Fallthrough to Cloud Endpoint
+    }
+
+    // 2. Fallback to Cloud Database Endpoint
     try {
       const res = await fetch(CLOUD_DB_URL, { cache: 'no-cache' });
       if (res.ok) {
