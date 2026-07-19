@@ -8,8 +8,9 @@
     "dev": "node server.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.19.2",
-    "cors": "^2.8.5"
+    "serverless-http": "^4.0.0"
   },
   "private": true
 }
