@@ -171,49 +171,31 @@ const app = {
   
   saveDatabase() {
     localStorage.setItem('eee_portal_results', JSON.stringify(state.admin.results));
+  },
 
-    // 1. Push directly to Live Render Backend Server
-    fetch('https://eee-club.onrender.com/api/results/sync', {
+  // Atomic single student record submission (prevents old database resurrection)
+  saveStudentSingleRecord(record) {
+    if (!record || !record.regId) return;
+
+    localStorage.setItem('eee_portal_results', JSON.stringify(state.admin.results));
+
+    // 1. Post ONLY this candidate record to Render Server
+    fetch('https://eee-club.onrender.com/api/results', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state.admin.results)
-    }).then(res => {
-      if (res.ok) return res.json();
-      throw new Error('Render API error');
-    }).then(data => {
-      if (data && Array.isArray(data.data)) {
-        state.admin.results = data.data;
-        localStorage.setItem('eee_portal_results', JSON.stringify(data.data));
+      body: JSON.stringify(record)
+    }).then(res => res.ok ? res.json() : null)
+    .then(payload => {
+      if (payload && payload.resetTimestamp) {
+        localStorage.setItem('eee_portal_reset_time', payload.resetTimestamp.toString());
       }
     }).catch(() => {
-      // 2. Try Relative /api/results (Netlify Functions or Local Server)
-      fetch('/api/results/sync', {
+      // 2. Try Relative /api/results (Netlify Functions)
+      fetch('/api/results', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(state.admin.results)
-      }).then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data && Array.isArray(data.data)) {
-          state.admin.results = data.data;
-          localStorage.setItem('eee_portal_results', JSON.stringify(data.data));
-        }
-      }).catch(() => {
-        // 3. Fallback to Cloud JSONBlob Endpoint
-        fetch(CLOUD_DB_URL, { cache: 'no-cache' })
-          .then(res => res.ok ? res.json() : [])
-          .then(remoteData => {
-            const merged = mergeDatabaseRecords(state.admin.results, Array.isArray(remoteData) ? remoteData : []);
-            state.admin.results = merged;
-            localStorage.setItem('eee_portal_results', JSON.stringify(merged));
-
-            return fetch(CLOUD_DB_URL, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(merged)
-            });
-          })
-          .catch(err => console.warn("Cloud push warning:", err));
-      });
+        body: JSON.stringify(record)
+      }).catch(err => console.warn("Single record post error:", err));
     });
   },
 
@@ -495,7 +477,7 @@ const app = {
           timestamp: Date.now()
         };
         state.admin.results.push(regRecord);
-        this.saveDatabase();
+        this.saveStudentSingleRecord(regRecord);
       }
       
       // Prepare instructions screen
@@ -862,7 +844,7 @@ const app = {
     } else {
       state.admin.results.push(submission);
     }
-    this.saveDatabase();
+    this.saveStudentSingleRecord(submission);
     
     // Pop receipt view
     $('receipt-name').innerText = submission.name;
