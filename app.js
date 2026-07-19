@@ -796,8 +796,8 @@ const app = {
       timestamp: Date.now()
     };
     
-    // Find the student's existing In Progress record and update it
-    const recordIdx = state.admin.results.findIndex(r => r.regId === state.student.regId && r.status === 'In Progress');
+    // Find the student's existing record and update it to Completed
+    const recordIdx = state.admin.results.findIndex(r => r.regId === state.student.regId);
     if (recordIdx !== -1) {
       state.admin.results[recordIdx] = submission;
     } else {
