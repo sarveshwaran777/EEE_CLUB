@@ -1,12 +1,14 @@
 [build]
   publish = "."
-  functions = "netlify/functions"
 
+# Proxy all Netlify API requests directly to your live Render backend
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  to = "https://eee-club.onrender.com/api/:splat"
   status = 200
+  force = true
 
+# Single Page App fallback routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
