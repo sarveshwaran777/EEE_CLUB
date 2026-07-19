@@ -86,6 +86,7 @@ function generateShuffledQuestions(pool, count = 60) {
 }
 
 // Central Cloud Database Endpoint for global submission synchronization
+const RENDER_BACKEND_URL = 'https://eee-club.onrender.com/api/results';
 const CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019f7ad1-4db9-71e3-bf2c-afadd3850dfa';
 
 function mergeDatabaseRecords(localList, remoteList) {
@@ -166,41 +167,76 @@ const app = {
   saveDatabase() {
     localStorage.setItem('eee_portal_results', JSON.stringify(state.admin.results));
 
-    // 1. Try Express backend REST API first
-    fetch('/api/results/sync', {
+    // 1. Push directly to Live Render Backend Server
+    fetch('https://eee-club.onrender.com/api/results/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(state.admin.results)
     }).then(res => {
       if (res.ok) return res.json();
-      throw new Error('Local API unavailable');
+      throw new Error('Render API error');
     }).then(data => {
       if (data && Array.isArray(data.data)) {
         state.admin.results = data.data;
         localStorage.setItem('eee_portal_results', JSON.stringify(data.data));
       }
     }).catch(() => {
-      // 2. Fallback to Cloud Database Endpoint
-      fetch(CLOUD_DB_URL, { cache: 'no-cache' })
-        .then(res => res.ok ? res.json() : [])
-        .then(remoteData => {
-          const merged = mergeDatabaseRecords(state.admin.results, Array.isArray(remoteData) ? remoteData : []);
-          state.admin.results = merged;
-          localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+      // 2. Try Relative /api/results (Netlify Functions or Local Server)
+      fetch('/api/results/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state.admin.results)
+      }).then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && Array.isArray(data.data)) {
+          state.admin.results = data.data;
+          localStorage.setItem('eee_portal_results', JSON.stringify(data.data));
+        }
+      }).catch(() => {
+        // 3. Fallback to Cloud JSONBlob Endpoint
+        fetch(CLOUD_DB_URL, { cache: 'no-cache' })
+          .then(res => res.ok ? res.json() : [])
+          .then(remoteData => {
+            const merged = mergeDatabaseRecords(state.admin.results, Array.isArray(remoteData) ? remoteData : []);
+            state.admin.results = merged;
+            localStorage.setItem('eee_portal_results', JSON.stringify(merged));
 
-          return fetch(CLOUD_DB_URL, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(merged)
-          });
-        })
-        .catch(err => console.warn("Cloud push warning:", err));
+            return fetch(CLOUD_DB_URL, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(merged)
+            });
+          })
+          .catch(err => console.warn("Cloud push warning:", err));
+      });
     });
   },
 
-  // Fetch live global submissions from backend API or central cloud
+  // Fetch live global submissions from Render backend, Netlify API, or Cloud endpoint
   async syncCloudDatabase() {
-    // 1. Try Express Backend API first
+    // 1. Try Live Render Backend Server first
+    try {
+      const renderRes = await fetch('https://eee-club.onrender.com/api/results', { cache: 'no-cache' });
+      if (renderRes.ok) {
+        const renderData = await renderRes.json();
+        if (Array.isArray(renderData)) {
+          const merged = mergeDatabaseRecords(state.admin.results, renderData);
+          state.admin.results = merged;
+          localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+
+          if (state.activeView === 'view-admin-dashboard') {
+            this.updateDashboardMetrics();
+            this.populateDeptFilter();
+            this.renderLeaderboard();
+          }
+          return;
+        }
+      }
+    } catch (err) {
+      // Fallthrough
+    }
+
+    // 2. Try Relative /api/results (Netlify Functions or Local Server)
     try {
       const serverRes = await fetch('/api/results', { cache: 'no-cache' });
       if (serverRes.ok) {
@@ -219,10 +255,10 @@ const app = {
         }
       }
     } catch (err) {
-      // Fallthrough to Cloud Endpoint
+      // Fallthrough
     }
 
-    // 2. Fallback to Cloud Database Endpoint
+    // 3. Fallback to Cloud Database Endpoint
     try {
       const res = await fetch(CLOUD_DB_URL, { cache: 'no-cache' });
       if (res.ok) {
