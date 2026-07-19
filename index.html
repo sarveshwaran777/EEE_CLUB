@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EEE Assessment & Event Portal</title>
+  <!-- Google Fonts: Outfit (modern titles) & Inter (clean UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Material Icons for UI -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Background Glowing Blobs -->
+  <div class="glow-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- HEADER BAR -->
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="logo-icon"><span class="material-icons">developer_board</span></span>
+        <div class="logo-text">
+          <h1>ELECTROQUIZ</h1>
+          <p>EEE TECH CHALLENGE PORTAL</p>
+        </div>
+      </div>
+      <div id="header-actions" class="header-actions">
+        <!-- Dynamic header actions go here -->
+      </div>
+    </header>
+
+    <!-- MAIN VIEWS -->
+    <main class="app-main">
+
+      <!-- SECTION 1: PORTAL SELECTION (LANDING PAGE) -->
+      <section id="view-portal-select" class="view-section active">
+        <div class="landing-hero">
+          <h2>Welcome to the Technical Assessment Portal</h2>
+          <p>Please select your login portal to proceed with the EEE Tech Challenge.</p>
+        </div>
+        <div class="portal-grid">
+          <!-- Student Card -->
+          <div class="portal-card" onclick="app.showLogin('student')">
+            <div class="portal-icon cyan-glow"><span class="material-icons">school</span></div>
+            <h3>Student Portal</h3>
+            <p>Access the 60 MCQ Tech Assessment based on the ElectroQuiz Training Handbook.</p>
+            <span class="portal-btn btn-cyan">Enter Portal</span>
+          </div>
+
+          <!-- Organiser Card (Requires Login) -->
+          <div class="portal-card" onclick="app.showLogin('organiser')">
+            <div class="portal-icon amber-glow"><span class="material-icons">admin_panel_settings</span></div>
+            <h3>Organiser Portal</h3>
+            <p>Access the administrative dashboard. Monitor live candidate progress, review scores, export reports, and filter top performers.</p>
+            <span class="portal-btn btn-amber">Login to Dashboard</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: LOGIN VIEW -->
+      <section id="view-login" class="view-section">
+        <div class="login-split-container">
+
+          <!-- LEFT: Info Panel (Student only, hidden for organiser via JS class) -->
+          <div class="login-info-panel" id="login-info-panel">
+            <div class="login-info-inner">
+              <div class="login-brand-logo">
+                <span class="material-icons" style="font-size:2.8rem; color:var(--accent-cyan);">electrical_services</span>
+              </div>
+              <h1 class="login-info-title font-outfit">EEE Tech<br><span class="text-cyan">Challenge</span> <span class="text-warning">2026</span></h1>
+              <p class="login-info-tagline">Powered by the Department of Electronics &amp; Electrical Engineering</p>
+
+              <div class="info-highlight-box">
+                <div class="info-highlight-row">
+                  <span class="material-icons text-cyan">quiz</span>
+                  <div>
+                    <strong>60 MCQ Questions</strong>
+                    <p>Multiple choice based assessment</p>
+                  </div>
+                </div>
+                <div class="info-highlight-row">
+                  <span class="material-icons text-warning">timer</span>
+                  <div>
+                    <strong>60 Minutes</strong>
+                    <p>Timed — auto-submits on expiry</p>
+                  </div>
+                </div>
+                <div class="info-highlight-row">
+                  <span class="material-icons" style="color:#a78bfa;">menu_book</span>
+                  <div>
+                    <strong>ElectroQuiz Handbook</strong>
+                    <p>Analog, Digital, ICs &amp; Measurements</p>
+                  </div>
+                </div>
+                <div class="info-highlight-row">
+                  <span class="material-icons" style="color:#34d399;">emoji_events</span>
+                  <div>
+                    <strong>Top Performers</strong>
+                    <p>Leaderboard filtered by score &amp; speed</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="info-note">
+                <span class="material-icons">info</span>
+                Fill in all fields accurately. Your registration number will be your unique identifier.
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Form Panel -->
+          <div class="login-form-panel">
+            <div class="login-form-inner glass-card">
+              <button class="back-btn" onclick="app.showView('view-portal-select')">
+                <span class="material-icons">arrow_back</span> Back
+              </button>
+              <div id="login-title-area" class="login-header">
+                <!-- Dynamically populated -->
+              </div>
+              <form id="login-form" onsubmit="app.handleLoginSubmit(event)">
+                <div id="login-inputs">
+                  <!-- Dynamically populated based on login type -->
+                </div>
+                <button type="submit" class="submit-btn font-outfit">Login to Portal</button>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 3: STUDENT INSTRUCTIONS -->
+      <section id="view-instructions" class="view-section">
+        <div class="instructions-container">
+          <div class="glass-card instruction-card">
+            <h2 class="font-outfit text-cyan">Tech Assessment Guidelines</h2>
+            <div class="student-info-badge" id="instruction-student-badge">
+              <!-- Dynamically populated -->
+            </div>
+            <div class="instructions-content">
+              <ul>
+                <li><span class="material-icons text-cyan">quiz</span> <strong>Assessment Type:</strong> 60 Multiple Choice Questions (MCQs).</li>
+                <li><span class="material-icons text-cyan">menu_book</span> <strong>Syllabus:</strong> Questions are sourced from the <em>ElectroQuiz Semiconductor Training Handbook</em> (Basics of Analog, Digital, ICs, &amp; Measurements).</li>
+                <li><span class="material-icons text-cyan">timer</span> <strong>Time Limit:</strong> 60 minutes. The assessment will automatically submit when the timer expires.</li>
+                <li><span class="material-icons text-cyan">check_circle</span> <strong>Navigation:</strong> You can skip questions, go back, and change answers. Use the sidebar grid to jump to any question.</li>
+                <li><span class="material-icons text-cyan">turned_in</span> <strong>Mark for Review:</strong> You can flag questions to review them later using the progress grid.</li>
+                <li><span class="material-icons text-warning">warning</span> <strong>Do Not Refresh:</strong> Refreshing or closing the tab will submit your current answers.</li>
+              </ul>
+            </div>
+            <button class="start-exam-btn font-outfit" onclick="app.startAssessment()">
+              Start Assessment <span class="material-icons">play_arrow</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: EXAM SCREEN -->
+      <section id="view-exam" class="view-section">
+        <div class="exam-layout">
+          <!-- Sidebar: Navigation Grid -->
+          <aside class="exam-sidebar glass-card">
+            <div class="sidebar-header">
+              <h3 class="font-outfit">Progress Grid</h3>
+              <div class="grid-stats">
+                <span class="stat-badge"><span class="badge-dot dot-answered"></span> <span id="stat-answered">0</span>/60</span>
+                <span class="stat-badge"><span class="badge-dot dot-marked"></span> <span id="stat-marked">0</span>/60</span>
+              </div>
+            </div>
+            <div class="question-grid" id="question-grid-container">
+              <!-- 60 dots will be populated here -->
+            </div>
+            <div class="sidebar-footer">
+              <div class="legend">
+                <div class="legend-item"><span class="dot-legend dot-unvisited"></span> Unanswered</div>
+                <div class="legend-item"><span class="dot-legend dot-answered"></span> Answered</div>
+                <div class="legend-item"><span class="dot-legend dot-marked"></span> Flagged for Review</div>
+              </div>
+              <button class="finish-exam-btn font-outfit" onclick="app.confirmSubmitExam()">
+                <span class="material-icons">send</span> Submit Assessment
+              </button>
+            </div>
+          </aside>
+
+          <!-- Main Exam Content -->
+          <div class="exam-content-area">
+            <!-- Timer & Details Bar -->
+            <div class="exam-top-bar glass-card">
+              <div class="exam-candidate-details">
+                <div class="candidate-name" id="exam-cand-name">Loading...</div>
+                <div class="candidate-sub" id="exam-cand-sub">ID: ... | Dept: ...</div>
+              </div>
+              <div class="timer-display-wrapper">
+                <div class="timer-ring-bg">
+                  <span class="material-icons timer-icon">timer</span>
+                  <div class="timer-text font-outfit" id="exam-timer">60:00</div>
+                </div>
+                <div class="timer-progress-bar">
+                  <div class="timer-progress-fill" id="timer-progress-fill" style="width: 100%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="glass-card question-card" id="active-question-card">
+              <div class="question-meta">
+                <span class="question-num-tag font-outfit" id="q-number-tag">Question 01 of 60</span>
+                <span class="question-category" id="q-category-tag">Semiconductor Overview</span>
+              </div>
+              <h2 class="question-text" id="q-text">Loading question text...</h2>
+              
+              <div class="options-container" id="q-options-container">
+                <!-- 4 Options populated here -->
+              </div>
+
+              <!-- Question Controls -->
+              <div class="question-controls">
+                <div class="controls-left">
+                  <button class="btn-secondary" onclick="app.clearCurrentAnswer()">
+                    <span class="material-icons">clear</span> Clear Choice
+                  </button>
+                  <button class="btn-secondary" id="btn-flag-review" onclick="app.toggleFlagReview()">
+                    <span class="material-icons">turned_in_not</span> Mark for Review
+                  </button>
+                </div>
+                <div class="controls-right">
+                  <button class="btn-primary" id="btn-prev" onclick="app.prevQuestion()">
+                    <span class="material-icons">navigate_before</span> Previous
+                  </button>
+                  <button class="btn-primary" id="btn-next" onclick="app.nextQuestion()">
+                    Next <span class="material-icons">navigate_next</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: STUDENT THANK YOU -->
+      <section id="view-thankyou" class="view-section" style="position: relative;">
+        <canvas id="confetti-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;"></canvas>
+        <div class="thankyou-container" style="position: relative; z-index: 2;">
+          <div class="glass-card thankyou-card text-center animated-thankyou-card">
+            <div class="success-icon-glowing animated-success-icon">
+              <span class="material-icons">task_alt</span>
+            </div>
+            <h2 class="font-outfit text-cyan">Assessment Submitted Successfully!</h2>
+            <p class="thankyou-msg">Thank you for participating in the EEE Tech Challenge. Your answers have been recorded in the system.</p>
+            
+            <div class="submission-summary-box glass-card">
+              <h4 class="font-outfit">Submission Receipt</h4>
+              <div class="receipt-row">
+                <span>Candidate Name:</span>
+                <strong id="receipt-name">-</strong>
+              </div>
+              <div class="receipt-row">
+                <span>Register ID:</span>
+                <strong id="receipt-id">-</strong>
+              </div>
+              <div class="receipt-row">
+                <span>Total Time Spent:</span>
+                <strong id="receipt-time">-</strong>
+              </div>
+              <div class="receipt-row">
+                <span>Status:</span>
+                <strong id="receipt-status" class="text-cyan">-</strong>
+              </div>
+            </div>
+
+            <button class="btn-primary font-outfit" onclick="app.logout()">
+              Return to Landing Portal
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 6: STAFF / ORGANISER DASHBOARD -->
+      <section id="view-admin-dashboard" class="view-section">
+        <div class="admin-layout">
+          <!-- Sidebar Controls -->
+          <div class="admin-sidebar glass-card">
+            <h3 class="font-outfit text-cyan">Admin Dashboard</h3>
+            <p class="admin-role-indicator" id="admin-role-badge">Logged in as: Staff</p>
+            
+            <div class="admin-menu">
+              <button class="menu-item active" onclick="app.switchAdminTab('leaderboard')">
+                <span class="material-icons">leaderboard</span> Leaderboard
+              </button>
+              <button class="menu-item" onclick="app.switchAdminTab('analytics')">
+                <span class="material-icons">analytics</span> Analytics
+              </button>
+              <div class="menu-divider"></div>
+              <h4 class="menu-section-title">Data Actions</h4>
+              <button class="menu-item action-item" onclick="app.exportToCSV()">
+                <span class="material-icons">file_download</span> Export CSV
+              </button>
+              <button class="menu-item action-item" onclick="app.exportToJSON()">
+                <span class="material-icons">save</span> Backup Data (JSON)
+              </button>
+              <button class="menu-item action-item" onclick="app.triggerImportJSON()">
+                <span class="material-icons">file_upload</span> Merge JSON Data
+              </button>
+              <input type="file" id="json-file-input" style="display:none;" accept=".json" onchange="app.importJSON(event)">
+              
+              <!-- Organiser Only Actions -->
+              <div id="organiser-only-actions" class="organiser-actions-block" style="display: none;">
+                <div class="menu-divider"></div>
+                <h4 class="menu-section-title text-warning">Organiser Controls</h4>
+                <button class="menu-item action-item btn-danger-menu" onclick="app.confirmResetDatabase()">
+                  <span class="material-icons">delete_forever</span> Reset Database
+                </button>
+              </div>
+            </div>
+            
+            <button class="admin-logout-btn font-outfit" onclick="app.logout()">
+              <span class="material-icons">logout</span> Logout
+            </button>
+          </div>
+
+          <!-- Main Admin Content -->
+          <div class="admin-content-area">
+            
+            <!-- Summary Metric Cards -->
+            <div class="metrics-row">
+              <!-- Card 1: Total Registered -->
+              <div class="metric-card glass-card">
+                <span class="material-icons m-icon text-cyan">people</span>
+                <div class="m-data">
+                  <h3 id="metric-total-students">0</h3>
+                  <p>Total Registered</p>
+                </div>
+              </div>
+              <!-- Card 2: Completed -->
+              <div class="metric-card glass-card">
+                <span class="material-icons m-icon text-green">task_alt</span>
+                <div class="m-data">
+                  <h3 id="metric-completed-assessments">0</h3>
+                  <p>Completed</p>
+                </div>
+              </div>
+              <!-- Card 3: In Progress -->
+              <div class="metric-card glass-card">
+                <span class="material-icons m-icon text-warning">pending</span>
+                <div class="m-data">
+                  <h3 id="metric-active-students">0</h3>
+                  <p>In Progress</p>
+                </div>
+              </div>
+              <!-- Card 4: Top Score -->
+              <div class="metric-card glass-card">
+                <span class="material-icons m-icon text-purple">emoji_events</span>
+                <div class="m-data">
+                  <h3 id="metric-top-score">0/60</h3>
+                  <p>Highest Score</p>
+                </div>
+              </div>
+              <!-- Card 5: Avg Score -->
+              <div class="metric-card glass-card">
+                <span class="material-icons m-icon text-cyan">analytics</span>
+                <div class="m-data">
+                  <h3 id="metric-average-score">0.0%</h3>
+                  <p>Average Score</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 1: Leaderboard Table -->
+            <div id="tab-leaderboard" class="admin-tab-content active">
+              <div class="table-controls-bar glass-card">
+                <div class="search-box">
+                  <span class="material-icons">search</span>
+                  <input type="text" id="search-input" placeholder="Search by name, register ID..." oninput="app.filterResults()">
+                </div>
+                <div class="filters-group">
+                  <select id="filter-dept" onchange="app.filterResults()">
+                    <option value="ALL">All Departments</option>
+                    <!-- Populated dynamically -->
+                  </select>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="filter-early-checkbox" onchange="app.filterResults()">
+                    <span class="slider"></span>
+                    <span class="toggle-label">Finished Early Only</span>
+                  </label>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="filter-top-checkbox" onchange="app.filterResults()">
+                    <span class="slider"></span>
+                    <span class="toggle-label">Top Performers (≥80%)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Leaderboard Table -->
+              <div class="table-responsive glass-card">
+                <table class="leaderboard-table" id="leaderboard-table">
+                  <thead>
+                    <tr>
+                      <th onclick="app.setSortKey('rank')">Rank <span class="material-icons sort-icon" id="sort-rank">unfold_more</span></th>
+                      <th onclick="app.setSortKey('name')">Name <span class="material-icons sort-icon" id="sort-name">unfold_more</span></th>
+                      <th onclick="app.setSortKey('regId')">Register ID <span class="material-icons sort-icon" id="sort-regId">unfold_more</span></th>
+                      <th onclick="app.setSortKey('dept')">Dept <span class="material-icons sort-icon" id="sort-dept">unfold_more</span></th>
+                      <th onclick="app.setSortKey('score')">Score <span class="material-icons sort-icon" id="sort-score">unfold_more</span></th>
+                      <th onclick="app.setSortKey('timeTaken')">Time Taken <span class="material-icons sort-icon" id="sort-timeTaken">unfold_more</span></th>
+                      <th onclick="app.setSortKey('status')">Status <span class="material-icons sort-icon" id="sort-status">unfold_more</span></th>
+                      <th>Finished Early?</th>
+                      <th>Submission Time</th>
+                      <th class="organiser-th-delete" style="display: none;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="leaderboard-tbody">
+                    <!-- Dynamic entries -->
+                  </tbody>
+                </table>
+                <div class="empty-table-message" id="empty-table-msg" style="display: none;">
+                  <span class="material-icons">info</span>
+                  <p>No student submissions found matching the current filters.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 2: Analytics -->
+            <div id="tab-analytics" class="admin-tab-content">
+              <div class="analytics-grid">
+                
+                <!-- Score Distribution Histogram -->
+                <div class="glass-card chart-card">
+                  <h3 class="font-outfit">Score Distribution</h3>
+                  <p class="chart-subtitle">Number of students within score brackets</p>
+                  <div class="chart-container" id="score-distribution-chart">
+                    <!-- Rendered via Javascript SVG -->
+                  </div>
+                </div>
+
+                <!-- Department Breakdowns -->
+                <div class="glass-card chart-card">
+                  <h3 class="font-outfit">Department performance</h3>
+                  <p class="chart-subtitle">Average scores by branch</p>
+                  <div class="chart-container" id="dept-performance-chart">
+                    <!-- Rendered via HTML bars -->
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer text-center">
+      <p>&copy; 2026 ElectroQuiz EEE Tech Challenge. Designed for Event Conducting.</p>
+    </footer>
+
+  </div>
+
+  <!-- CANDIDATE DETAIL MODAL -->
+  <div class="modal-overlay" id="candidate-detail-modal">
+    <div class="glass-card modal-card candidate-detail-card">
+      <div class="modal-header-bar">
+        <div class="logo-area">
+          <span class="logo-icon"><span class="material-icons">assignment_ind</span></span>
+          <div class="logo-text">
+            <h2 class="font-outfit text-cyan" id="detail-modal-title" style="margin: 0; font-size: 1.4rem;">Candidate Assessment Review</h2>
+            <p id="detail-modal-subtitle" style="margin: 0; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 1px;">DETAILED TEST RESPONSE ANALYSIS</p>
+          </div>
+        </div>
+        <button class="close-modal-btn" onclick="app.closeCandidateDetail()" title="Close Review">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="candidate-detail-meta" id="detail-candidate-summary">
+        <!-- Dynamically populated candidate profile -->
+      </div>
+      <div class="detail-filters-bar">
+        <button class="detail-filter-btn active" id="btn-detail-all" onclick="app.filterDetailQuestions('all')">All Questions (60)</button>
+        <button class="detail-filter-btn text-green" id="btn-detail-correct" onclick="app.filterDetailQuestions('correct')">Correct (0)</button>
+        <button class="detail-filter-btn text-danger" id="btn-detail-incorrect" onclick="app.filterDetailQuestions('incorrect')">Incorrect (0)</button>
+        <button class="detail-filter-btn text-warning" id="btn-detail-skipped" onclick="app.filterDetailQuestions('skipped')">Skipped (0)</button>
+      </div>
+      <div class="detail-questions-list" id="detail-questions-container">
+        <!-- Dynamically populated list of questions and answers -->
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP CONFIRMATION MODAL -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="glass-card modal-card">
+      <h3 class="font-outfit" id="modal-title">Are you sure?</h3>
+      <p id="modal-body">This action cannot be undone.</p>
+      <div class="modal-buttons">
+        <button class="btn-secondary" id="modal-cancel-btn">Cancel</button>
+        <button class="btn-primary" id="modal-confirm-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Files -->
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
