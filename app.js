@@ -131,6 +131,13 @@ const app = {
         this.syncCloudDatabase();
       }
     }, 8000);
+
+    // Network reconnection listener: auto-push pending results as soon as internet reconnects
+    window.addEventListener('online', () => {
+      console.log('Network reconnected! Syncing pending test results to cloud...');
+      this.saveDatabase();
+      this.syncCloudDatabase();
+    });
     
     // Setup Navigation Listeners
     window.addEventListener('beforeunload', (e) => {
