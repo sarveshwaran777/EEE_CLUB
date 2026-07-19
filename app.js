@@ -426,7 +426,7 @@ const app = {
     this.showView('view-login');
   },
   
-  handleLoginSubmit(e) {
+  async handleLoginSubmit(e) {
     e.preventDefault();
     
     if (state.currentUserType === 'student') {
@@ -437,7 +437,15 @@ const app = {
       state.student.year = $('student-year').value;
       state.student.dept = $('student-dept').value;
       
-      // Check if student already finished the exam to avoid multiple submissions
+      // Sync latest cloud reset status first before checking candidate eligibility
+      await this.syncCloudDatabase();
+      const resetTime = parseInt(localStorage.getItem('eee_portal_reset_time') || '0', 10);
+      if (resetTime > 0) {
+        state.admin.results = state.admin.results.filter(r => (r.timestamp || 0) >= resetTime);
+        localStorage.setItem('eee_portal_results', JSON.stringify(state.admin.results));
+      }
+
+      // Check if student already finished the exam on the active post-reset database
       const alreadyTaken = state.admin.results.find(r => r.regId === state.student.regId);
       if (alreadyTaken && alreadyTaken.status === 'Completed') {
         alert(`Candidate with Register ID ${state.student.regId} has already submitted the assessment. Scores cannot be overwritten.`);
