@@ -85,6 +85,32 @@ function generateShuffledQuestions(pool, count = 60) {
   });
 }
 
+// Central Cloud Database Endpoint for global submission synchronization
+const CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019f7ad1-4db9-71e3-bf2c-afadd3850dfa';
+
+function mergeDatabaseRecords(localList, remoteList) {
+  const map = new Map();
+  (localList || []).forEach(r => {
+    if (r && r.regId) map.set(r.regId, r);
+  });
+
+  (remoteList || []).forEach(r => {
+    if (!r || !r.regId) return;
+    const existing = map.get(r.regId);
+    if (!existing) {
+      map.set(r.regId, r);
+    } else {
+      if (r.status === 'Completed' && existing.status !== 'Completed') {
+        map.set(r.regId, r);
+      } else if (r.status === existing.status && (r.timestamp || 0) >= (existing.timestamp || 0)) {
+        map.set(r.regId, r);
+      }
+    }
+  });
+
+  return Array.from(map.values());
+}
+
 // DOM Elements cache helper
 const $ = (id) => document.getElementById(id);
 
@@ -95,8 +121,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
 const app = {
   init() {
-    // Load mock database results from localStorage
+    // Load local & fetch central cloud submissions
     this.loadDatabase();
+    this.syncCloudDatabase();
+
+    // Auto-sync cloud submissions every 8 seconds when Organiser dashboard is active
+    setInterval(() => {
+      if (state.activeView === 'view-admin-dashboard') {
+        this.syncCloudDatabase();
+      }
+    }, 8000);
     
     // Setup Navigation Listeners
     window.addEventListener('beforeunload', (e) => {
@@ -119,89 +153,50 @@ const app = {
       } catch (e) {
         state.admin.results = [];
       }
-    } else {
-      // Seed with some high-quality mock data so the Staff/Organiser portal has instant visual value!
-      const mockData = [
-        {
-          name: "Amit Patel",
-          phone: "9876543210",
-          regId: "951222105001",
-          gmail: "amit@gmail.com",
-          dept: "Electrical and Electronics Engineering",
-          answers: Array(60).fill("A"),
-          score: 52,
-          percent: 86.67,
-          timeTakenSeconds: 1420, // 23m 40s (Early finisher)
-          timeTakenStr: "23:40",
-          isEarly: true,
-          timeRemainingSeconds: 2180,
-          timeRemainingStr: "36:20",
-          status: "Completed",
-          submittedAt: new Date(Date.now() - 3600000 * 2).toLocaleString(),
-          timestamp: Date.now() - 3600000 * 2
-        },
-        {
-          name: "Sanjana Rao",
-          phone: "8765432109",
-          regId: "951222105014",
-          gmail: "sanjana@gmail.com",
-          dept: "Electronics and Communication Engineering",
-          answers: Array(60).fill("B"),
-          score: 49,
-          percent: 81.67,
-          timeTakenSeconds: 2150, // 35m 50s
-          timeTakenStr: "35:50",
-          isEarly: false,
-          timeRemainingSeconds: 1450,
-          timeRemainingStr: "24:10",
-          status: "Completed",
-          submittedAt: new Date(Date.now() - 3600000).toLocaleString(),
-          timestamp: Date.now() - 3600000
-        },
-        {
-          name: "Vikram Singh",
-          phone: "7654321098",
-          regId: "951222105022",
-          gmail: "vikram@gmail.com",
-          dept: "Electrical and Electronics Engineering",
-          answers: Array(60).fill("C"),
-          score: 58,
-          percent: 96.67,
-          timeTakenSeconds: 1100, // 18m 20s (Early finisher, high accuracy)
-          timeTakenStr: "18:20",
-          isEarly: true,
-          timeRemainingSeconds: 2500,
-          timeRemainingStr: "41:40",
-          status: "Completed",
-          submittedAt: new Date(Date.now() - 1800000).toLocaleString(),
-          timestamp: Date.now() - 1800000
-        },
-        {
-          name: "Meera Nair",
-          phone: "6543210987",
-          regId: "951222105009",
-          gmail: "meera@gmail.com",
-          dept: "Computer Science and Engineering",
-          answers: Array(60).fill("D"),
-          score: 42,
-          percent: 70.00,
-          timeTakenSeconds: 2800, // 46m 40s
-          timeTakenStr: "46:40",
-          isEarly: false,
-          timeRemainingSeconds: 800,
-          timeRemainingStr: "13:20",
-          status: "Completed",
-          submittedAt: new Date().toLocaleString(),
-          timestamp: Date.now()
-        }
-      ];
-      state.admin.results = mockData;
-      localStorage.setItem('eee_portal_results', JSON.stringify(mockData));
     }
   },
   
   saveDatabase() {
     localStorage.setItem('eee_portal_results', JSON.stringify(state.admin.results));
+
+    // Asynchronously push merged candidate records to global cloud DB
+    fetch(CLOUD_DB_URL, { cache: 'no-cache' })
+      .then(res => res.ok ? res.json() : [])
+      .then(remoteData => {
+        const merged = mergeDatabaseRecords(state.admin.results, Array.isArray(remoteData) ? remoteData : []);
+        state.admin.results = merged;
+        localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+
+        return fetch(CLOUD_DB_URL, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(merged)
+        });
+      })
+      .catch(err => console.warn("Cloud push warning:", err));
+  },
+
+  // Fetch live global submissions from central cloud
+  async syncCloudDatabase() {
+    try {
+      const res = await fetch(CLOUD_DB_URL, { cache: 'no-cache' });
+      if (res.ok) {
+        const remoteData = await res.json();
+        if (Array.isArray(remoteData)) {
+          const merged = mergeDatabaseRecords(state.admin.results, remoteData);
+          state.admin.results = merged;
+          localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+
+          if (state.activeView === 'view-admin-dashboard') {
+            this.updateDashboardMetrics();
+            this.populateDeptFilter();
+            this.renderLeaderboard();
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Cloud sync warning:", e);
+    }
   },
   
   // Router
