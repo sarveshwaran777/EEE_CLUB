@@ -89,14 +89,14 @@ function generateShuffledQuestions(pool, count = 60) {
 const RENDER_BACKEND_URL = 'https://eee-club.onrender.com/api/results';
 const CLOUD_DB_URL = 'https://jsonblob.com/api/jsonBlob/019f7ad1-4db9-71e3-bf2c-afadd3850dfa';
 
-function mergeDatabaseRecords(localList, remoteList) {
+function mergeDatabaseRecords(localList, remoteList, resetTimestamp = 0) {
   const map = new Map();
   (localList || []).forEach(r => {
-    if (r && r.regId) map.set(r.regId, r);
+    if (r && r.regId && (r.timestamp || 0) >= resetTimestamp) map.set(r.regId, r);
   });
 
   (remoteList || []).forEach(r => {
-    if (!r || !r.regId) return;
+    if (!r || !r.regId || (r.timestamp || 0) < resetTimestamp) return;
     const existing = map.get(r.regId);
     if (!existing) {
       map.set(r.regId, r);
@@ -155,9 +155,14 @@ const app = {
   // Load local results
   loadDatabase() {
     const raw = localStorage.getItem('eee_portal_results');
+    const resetTime = parseInt(localStorage.getItem('eee_portal_reset_time') || '0', 10);
     if (raw) {
       try {
-        state.admin.results = JSON.parse(raw);
+        let list = JSON.parse(raw);
+        if (resetTime > 0) {
+          list = list.filter(r => (r.timestamp || 0) >= resetTime);
+        }
+        state.admin.results = list;
       } catch (e) {
         state.admin.results = [];
       }
@@ -218,19 +223,25 @@ const app = {
     try {
       const renderRes = await fetch('https://eee-club.onrender.com/api/results', { cache: 'no-cache' });
       if (renderRes.ok) {
-        const renderData = await renderRes.json();
-        if (Array.isArray(renderData)) {
-          const merged = mergeDatabaseRecords(state.admin.results, renderData);
-          state.admin.results = merged;
-          localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+        const payload = await renderRes.json();
+        const remoteData = Array.isArray(payload) ? payload : (payload.data || []);
+        const serverResetTime = payload.resetTimestamp || 0;
 
-          if (state.activeView === 'view-admin-dashboard') {
-            this.updateDashboardMetrics();
-            this.populateDeptFilter();
-            this.renderLeaderboard();
-          }
-          return;
+        if (serverResetTime > 0) {
+          localStorage.setItem('eee_portal_reset_time', serverResetTime.toString());
+          state.admin.results = state.admin.results.filter(r => (r.timestamp || 0) >= serverResetTime);
         }
+
+        const merged = mergeDatabaseRecords(state.admin.results, remoteData, serverResetTime);
+        state.admin.results = merged;
+        localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+
+        if (state.activeView === 'view-admin-dashboard') {
+          this.updateDashboardMetrics();
+          this.populateDeptFilter();
+          this.renderLeaderboard();
+        }
+        return;
       }
     } catch (err) {
       // Fallthrough
@@ -240,19 +251,25 @@ const app = {
     try {
       const serverRes = await fetch('/api/results', { cache: 'no-cache' });
       if (serverRes.ok) {
-        const serverData = await serverRes.json();
-        if (Array.isArray(serverData)) {
-          const merged = mergeDatabaseRecords(state.admin.results, serverData);
-          state.admin.results = merged;
-          localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+        const payload = await serverRes.json();
+        const serverData = Array.isArray(payload) ? payload : (payload.data || []);
+        const serverResetTime = payload.resetTimestamp || 0;
 
-          if (state.activeView === 'view-admin-dashboard') {
-            this.updateDashboardMetrics();
-            this.populateDeptFilter();
-            this.renderLeaderboard();
-          }
-          return;
+        if (serverResetTime > 0) {
+          localStorage.setItem('eee_portal_reset_time', serverResetTime.toString());
+          state.admin.results = state.admin.results.filter(r => (r.timestamp || 0) >= serverResetTime);
         }
+
+        const merged = mergeDatabaseRecords(state.admin.results, serverData, serverResetTime);
+        state.admin.results = merged;
+        localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+
+        if (state.activeView === 'view-admin-dashboard') {
+          this.updateDashboardMetrics();
+          this.populateDeptFilter();
+          this.renderLeaderboard();
+        }
+        return;
       }
     } catch (err) {
       // Fallthrough
@@ -262,17 +279,23 @@ const app = {
     try {
       const res = await fetch(CLOUD_DB_URL, { cache: 'no-cache' });
       if (res.ok) {
-        const remoteData = await res.json();
-        if (Array.isArray(remoteData)) {
-          const merged = mergeDatabaseRecords(state.admin.results, remoteData);
-          state.admin.results = merged;
-          localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+        const payload = await res.json();
+        const remoteData = Array.isArray(payload) ? payload : (payload.data || []);
+        const serverResetTime = payload.resetTimestamp || 0;
 
-          if (state.activeView === 'view-admin-dashboard') {
-            this.updateDashboardMetrics();
-            this.populateDeptFilter();
-            this.renderLeaderboard();
-          }
+        if (serverResetTime > 0) {
+          localStorage.setItem('eee_portal_reset_time', serverResetTime.toString());
+          state.admin.results = state.admin.results.filter(r => (r.timestamp || 0) >= serverResetTime);
+        }
+
+        const merged = mergeDatabaseRecords(state.admin.results, remoteData, serverResetTime);
+        state.admin.results = merged;
+        localStorage.setItem('eee_portal_results', JSON.stringify(merged));
+
+        if (state.activeView === 'view-admin-dashboard') {
+          this.updateDashboardMetrics();
+          this.populateDeptFilter();
+          this.renderLeaderboard();
         }
       }
     } catch (e) {
